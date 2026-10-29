@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8"/>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <title>BMTC+ Conductor</title>
+
+  <!-- Firebase SDKs must be in <head> -->
+
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+
+  <style>
+
+    :root {
+
+      --blue:#003580; --bg:#f0f4ff; --card:#fff;
+
+      --muted:#6b7280; --green:#16a34a; --amber:#d97706; --red:#dc2626;
+
+    }
+
+    *{margin:0;padding:0;box-sizing:border-box;}
+
+    body{
+
+      font-family:'Segoe UI',system-ui,sans-serif;
+
+      max-width:420px;margin:auto;background:var(--bg);
+
+      min-height:100vh;color:#1a1a2e;padding-bottom:32px;
+
+    }
+
+
+
+    .header{background:var(--blue);color:white;padding:14px 16px 12px;}
+
+    .header h1{font-size:20px;font-weight:700;}
+
+    .header p{font-size:12px;opacity:.75;margin-top:3px;}
+
+
+
+    /* Connectivity badge — informational only, does NOT block the button */
+
+    .conn-badge{
+
+      margin:12px 14px 0;padding:8px 14px;border-radius:10px;
+
+      font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;
+
+    }
+
+    .conn-badge.online  {background:#dcfce7;color:#15803d;}
+
+    .conn-badge{cursor:pointer;}
+
+    .conn-badge.connecting{background:#eff6ff;color:#1d4ed8;}
+
+    .conn-badge.connecting .conn-dot{background:#2563eb;animation:pulse 1s infinite;}
+
+    @keyframes pulse{50%{opacity:.25}}
+
+    .conn-badge.offline {background:#fff7ed;color:#92400e;}  /* amber, not red — warning only */
+
+    .conn-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+    .conn-badge.online  .conn-dot{background:#16a34a;}
+
+    .conn-badge.offline .conn-dot{background:#d97706;}
+
+
+
+    .content{padding:14px;}
+
+
+
+    .field-label{
+
+      display:block;font-size:12px;font-weight:600;
+
+      color:var(--muted);margin-bottom:5px;
+
+    }
+
+    select{
+
+      width:100%;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;
+
+      font-size:14px;background:white;color:#1a1a2e;appearance:none;
+
+      cursor:pointer;outline:none;margin-bottom:12px;
+
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+
+      background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;
+
+    }
+
+    select:focus{border-color:var(--blue);}
+
+
+
+    .stop-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px;}
+
+    .stop-col{display:flex;flex-direction:column;}
+
+    .stop-col select{margin-bottom:0;}
+
+
+
+    /* Issue Ticket button — ALWAYS enabled, never greyed by connectivity */
+
+    .issue-btn{
+
+      width:100%;padding:22px;background:var(--blue);color:white;
+
+      border:none;border-radius:16px;font-size:22px;font-weight:700;
+
+      cursor:pointer;box-shadow:0 6px 20px rgba(0,53,128,.3);
+
+      transition:transform .1s,background .1s;margin:14px 0 0;
+
+    }
+
+    .issue-btn:active{transform:scale(.97);background:#002460;}
+
+
+
+    .count-card{
+
+      background:white;border-radius:16px;padding:18px;text-align:center;
+
+      box-shadow:0 2px 12px rgba(0,53,128,.08);margin-top:14px;
+
+    }
+
+    .count-label{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.5px;margin-bottom:6px;}
+
+    .big-num{font-size:72px;font-weight:800;color:var(--blue);line-height:1;transition:color .3s,transform .15s;}
+
+    .big-num.bump{transform:scale(1.15);}
+
+    .cap-text{font-size:14px;color:var(--muted);margin-top:4px;}
+
+    .crowd-bar-wrap{background:#f3f4f6;border-radius:8px;height:14px;margin:14px 0 10px;overflow:hidden;}
+
+    .crowd-bar{height:14px;border-radius:8px;transition:width .4s,background .4s;}
+
+    .crowd-badge{display:inline-block;padding:6px 18px;border-radius:20px;font-weight:700;font-size:15px;}
+
+    .pct-text{font-size:13px;color:var(--muted);margin-top:8px;}
+
+
+
+    .log-card{
+
+      background:white;border-radius:14px;padding:14px;
+
+      box-shadow:0 2px 8px rgba(0,53,128,.07);margin-top:14px;
+
+    }
+
+    .log-title{
+
+      font-size:13px;font-weight:600;color:var(--blue);margin-bottom:10px;
+
+      display:flex;justify-content:space-between;align-items:center;
+
+    }
+
+    .log-count-pill{background:#eff6ff;color:var(--blue);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;}
+
+    .log-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:13px;}
+
+    .log-row:last-child{border-bottom:none;padding-bottom:0;}
+
+    .log-stops{color:#1a1a2e;font-weight:500;}
+
+    .log-meta{color:var(--muted);font-size:11px;text-align:right;}
+
+    .log-empty{text-align:center;color:var(--muted);font-size:13px;padding:12px 0;}
+
+
+
+    .reset-btn{
+
+      width:100%;padding:12px;background:white;color:var(--red);
+
+      border:1.5px solid #fecaca;border-radius:10px;font-size:14px;
+
+      font-weight:600;cursor:pointer;margin-top:14px;
+
+    }
+
+    .reset-btn:active{background:#fff5f5;}
+
+
+
+    .tip{
+
+      background:#eff6ff;border-left:4px solid var(--blue);border-radius:10px;
+
+      padding:12px 14px;margin-top:14px;font-size:13px;color:var(--blue);line-height:1.5;
+
+    }
+
+    .tip strong{display:block;font-weight:700;margin-bottom:4px;}
+
+
+
+    .toast{
+
+      position:fixed;bottom:24px;left:50%;
+
+      transform:translateX(-50%) translateY(80px);
+
+      background:#1a1a2e;color:white;padding:10px 20px;
+
+      border-radius:20px;font-size:14px;font-weight:500;
+
+      transition:transform .3s ease;z-index:9999;
+
+      white-space:nowrap;pointer-events:none;
+
+    }
+
+    .toast.show{transform:translateX(-50%) translateY(0);}
+
+  </style>
+
+</head>
+
+<body>
+
+
+
+<div class="header">
+
+  <h1>🎫 BMTC+ Conductor Panel</h1>
+
+  <p>Ticketing panel · occupancy syncs live to passengers</p>
+
+</div>
+
+
+
+<!-- Connectivity indicator — informational only, never blocks ticket issuing -->
+
+<div class="conn-badge connecting" id="connBadge" onclick="retryConnection()" role="button" title="Tap to retry">
+
+  <div class="conn-dot"></div>
+
+  <span id="connText">Connecting to Firebase…</span>
+
+  <span id="pendingPill" style="margin-left:auto;display:none;background:#fff;border-radius:20px;padding:2px 9px;font-size:11px"></span>
+
+</div>
+
+
+
+<div class="content">
+
+
+
+  <label class="field-label" for="busSelect">Select Bus Route</label>
+
+  <select id="busSelect" onchange="switchBus()">
+
+    <option value="500C">500C — KR Puram → Central Silk Board (ORR)</option>
+
+    <option value="335E">335E — Kempegowda BS → Kadugodi (Old Madras Rd)</option>
+
+    <option value="401K">401K — Yelahanka → Kengeri TTMC (ORR West)</option>
+
+    <option value="VAJRA">Vajra AC — Airport → Kempegowda BS</option>
+
+    <option value="600G">600G — Kempegowda BS → Gottigere (South)</option>
+
+  </select>
+
+
+
+  <div class="stop-row">
+
+    <div class="stop-col">
+
+      <label class="field-label">🟢 Boards at</label>
+
+      <select id="boardSelect"></select>
+
+    </div>
+
+    <div class="stop-col">
+
+      <label class="field-label">🔴 Alights at</label>
+
+      <select id="alightSelect"></select>
+
+    </div>
+
+  </div>
+
+  <div class="fare-card" style="margin-top:12px;padding:12px 14px;background:#fff;border:1px solid #dbeafe;border-radius:12px;">
+    <div style="font-size:12px;color:#6b7280;font-weight:600;">BMTC FARE (API LOOKUP)</div>
+    <div id="fareAmount" style="font-size:26px;font-weight:800;color:#003580;margin-top:3px;">Checking fare…</div>
+    <label for="fareTypeSelect" style="display:block;font-size:12px;color:#6b7280;margin-top:8px;">Bus service type</label>
+    <select id="fareTypeSelect" style="margin-top:4px;margin-bottom:4px;" onchange="selectFareType()"><option value="">Waiting for fare options…</option></select>
+    <div id="fareDetails" style="font-size:12px;color:#6b7280;margin-top:3px;">Uses BMTC mobile API data when available; unavailable fares are not guessed.</div>
+  </div>
+
+  <label class="field-label" for="currentStopSelect" style="margin-top:12px">📍 Bus currently at</label>
+
+  <select id="currentStopSelect" onchange="recalculateOccupancy()"></select>
+
+
+
+  <!-- Button is ALWAYS clickable — no disabled state based on connectivity -->
+
+  <button class="issue-btn" id="issueBtn" onclick="issueTicket()">🎫 Issue Ticket</button>
+
+
+
+  <div class="count-card">
+
+    <p class="count-label">PASSENGERS CURRENTLY ABOARD</p>
+
+    <div class="big-num" id="ticketDisplay">0</div>
+
+    <p class="cap-text">out of <span id="capDisplay">65</span> seats</p>
+
+    <div class="crowd-bar-wrap">
+
+      <div class="crowd-bar" id="crowdBar" style="width:0%;background:#16a34a;"></div>
+
+    </div>
+
+    <span class="crowd-badge" id="crowdBadge" style="background:#dcfce7;color:#15803d;">🟢 Not Crowded</span>
+
+    <p class="pct-text" id="pctText">0% full</p>
+
+  </div>
+
+
+
+  <div class="log-card">
+
+    <p class="log-title">
+
+      Passengers on this trip
+
+      <span class="log-count-pill" id="logCountPill">0</span>
+
+    </p>
+
+    <div id="passengerLog">
+
+      <p class="log-empty">No tickets issued yet</p>
+
+    </div>
+
+  </div>
+
+
+
+  <button class="reset-btn" onclick="resetTrip()">🔄 Reset for New Trip</button>
+
+
+
+  <div class="tip">
+
+    <strong>How to use</strong>
+
+    Select boarding and alighting stops, choose the bus current stop, then tap Issue Ticket. Occupancy counts only passengers whose trip includes that stop.
+
+    Passengers using BMTC+ see the occupancy level update instantly.
+
+    Green = not crowded, Yellow = moderate, Red = very crowded.
+
+  </div>
+
+
+
+</div>
+
+
+
+<div class="toast" id="toast"></div>
+
+
+
+<script>
+
+/* ── FIREBASE ──────────────────────────────────────────────────────── */
+
+const firebaseConfig = {
+
+  apiKey:            "AIzaSyBJhjQuVezbRJoFVLgvTmaDVDYmdg3Aock",
+
+  authDomain:        "bmtc-plus.firebaseapp.com",
+
+  databaseURL:       "https://bmtc-plus-default-rtdb.firebaseio.com",
+
+  projectId:         "bmtc-plus",
+
+  storageBucket:     "bmtc-plus.firebasestorage.app",
+
+  messagingSenderId: "1004223209739",
+
+  appId:             "1:1004223209739:web:7578d2ccbadfc12413020e"
+
+}
+
+firebase.initializeApp(firebaseConfig)
+
+const db = firebase.database()
+
+
+
+/* ── CONNECTIVITY ─ shows connecting / online / offline with a reason.
+
+   Never blocks the Issue Ticket button. Tap the badge to retry.
+
+   Open conductor.html?lp=1 to force long-polling on networks that block websockets. */
+
+if (/[?&]lp=1/.test(location.search)) { try { firebase.database.INTERNAL.forceLongPolling() } catch (e) {} }
+
+let fbConnected = false, connTimer = null
+
+function setConn(state, msg) {
+
+  document.getElementById('connBadge').className = 'conn-badge ' + state
+
+  document.getElementById('connText').textContent = msg
+
+}
+
+function diagnose() {
+
+  if (fbConnected) return
+
+  if (!navigator.onLine) { setConn('offline', '⚠ No internet on this device — tickets are saved and will sync'); return }
+
+  fetch(firebaseConfig.databaseURL + '/.json?shallow=true')
+
+    .then(r => {
+
+      if (fbConnected) return
+
+      if (r.status === 200 || r.status === 401 || r.status === 403)
+
+        setConn('offline', '⚠ Firebase reachable but live link blocked (network/firewall). Tap to retry, or open ?lp=1')
+
+      else
+
+        setConn('offline', '⚠ Firebase database URL not found (' + r.status + ') — check databaseURL/region in Firebase Console')
+
+    })
+
+    .catch(() => { if (!fbConnected) setConn('offline', '⚠ Cannot reach Firebase — check internet/firewall. Tickets are saved and will sync') })
+
+}
+
+function startConnTimer() { clearTimeout(connTimer); connTimer = setTimeout(diagnose, 6000) }
+
+function retryConnection() {
+
+  if (fbConnected) { showToast('✓ Already connected'); return }
+
+  setConn('connecting', 'Reconnecting to Firebase…')
+
+  try { db.goOffline(); db.goOnline() } catch (e) {}
+
+  startConnTimer()
+
+}
+
+db.ref('.info/connected').on('value', snap => {
+
+  fbConnected = snap.val() === true
+
+  if (fbConnected) {
+
+    clearTimeout(connTimer)
+
+    setConn('online', '✓ Connected — passengers see live updates')
+
+    flushPending()
+
+  } else {
+
+    setConn(navigator.onLine ? 'connecting' : 'offline',
+
+            navigator.onLine ? 'Connecting to Firebase…' : '⚠ No internet — tickets will sync when reconnected')
+
+    startConnTimer()
+
+  }
+
+})
+
+window.addEventListener('online',  retryConnection)
+
+window.addEventListener('offline', () => { if (!fbConnected) setConn('offline', '⚠ No internet — tickets will sync when reconnected') })
+
+
+
+/* ── PENDING TICKETS (survive page reload while offline) ─────────── */
+
+const PENDING_KEY = 'bmtc_conductor_pending_v1'
+
+const getPending = () => { try { return JSON.parse(localStorage.getItem(PENDING_KEY) || '[]') } catch (e) { return [] } }
+
+const setPending = list => { try { localStorage.setItem(PENDING_KEY, JSON.stringify(list)) } catch (e) {} ; showPending() }
+
+function showPending() {
+
+  const n = getPending().length, el = document.getElementById('pendingPill')
+
+  el.style.display = n ? 'inline-block' : 'none'
+
+  el.textContent = n + ' pending'
+
+}
+
+function flushPending() {
+
+  getPending().forEach(t => {
+
+    db.ref(`buses/${t.bus}/passengers/${t.key}`).set(t.data)
+
+      .then(() => setPending(getPending().filter(x => x.key !== t.key)))
+
+      .catch(() => {})
+
+  })
+
+}
+
+
+
+/* ── ROUTE DEFINITIONS (must match index.html exactly) ──────────── */
+
+const ROUTES = {
+
+  "500C": {
+
+    cap: 65,
+
+    stops: [
+
+      "KR Puram Bus Stand",
+
+      "Tin Factory",
+
+      "Marathahalli Bridge",
+
+      "Bellandur Signal",
+
+      "Agara Junction",
+
+      "HSR Layout BDA Complex",
+
+      "Bommanahalli",
+
+      "Electronic City Flyover",
+
+      "Hebbagodi",
+
+      "Central Silk Board"
+
+    ]
+
+  },
+
+  "335E": {
+
+    cap: 65,
+
+    stops: [
+
+      "Kempegowda Bus Station",
+
+      "Mayo Hall",
+
+      "Domlur",
+
+      "HAL Old Airport Road",
+
+      "Marathahalli Bridge",
+
+      "ITPL Main Gate",
+
+      "Whitefield Bus Stop",
+
+      "Hoodi Junction",
+
+      "Kadugodi Bus Station"
+
+    ]
+
+  },
+
+  "401K": {
+
+    cap: 65,
+
+    stops: [
+
+      "Yelahanka Old Town",
+
+      "Vidyaranyapura",
+
+      "BEL Circle",
+
+      "Mathikere",
+
+      "Yeshwanthpur Junction",
+
+      "Rajajinagar 4th Block",
+
+      "Vijayanagar Bus Stand",
+
+      "Kengeri Satellite Town",
+
+      "Kengeri TTMC"
+
+    ]
+
+  },
+
+  "VAJRA": {
+
+    cap: 45,
+
+    stops: [
+
+      "Kempegowda Intl Airport",
+
+      "Yelahanka New Town",
+
+      "Hebbal Flyover",
+
+      "Mekhri Circle",
+
+      "MG Road (Trinity Circle)",
+
+      "Kempegowda Bus Station"
+
+    ]
+
+  },
+
+  "600G": {
+
+    cap: 65,
+
+    stops: [
+
+      "Kempegowda Bus Station",
+
+      "Jayanagar 4th T Block",
+
+      "JP Nagar 2nd Phase",
+
+      "Bannerghatta Road",
+
+      "Arekere Gate",
+
+      "Gottigere"
+
+    ]
+
+  }
+
+}
+
+
+
+/* ── STATE ──────────────────────────────────────────────────────── */
+
+let currentBus = "500C"
+
+let busRef     = null
+
+
+
+/* ── BMTC FARE LOOKUP (unofficially documented BMTC mobile API) ── */
+const BMTC_API = 'https://bmtcmobileapi.karnataka.gov.in/WebAPI';
+let apiRouteVariants = [];
+let apiStops = [];
+let fareLookupToken = 0;
+let currentFareOptions = [];
+
+async function bmtcPost(path, body, extraHeaders = {}) {
+  const response = await fetch(`${BMTC_API}/${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json, text/plain, */*', lan: 'en', deviceType: 'WEB', ...extraHeaders },
+    body: JSON.stringify(body)
+  });
+  if (!response.ok) throw new Error(`${path} returned HTTP ${response.status}`);
+  return response.json();
+}
+
+function normalizeStop(s) {
+  return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+async function loadOfficialRouteStops(busId) {
+  apiRouteVariants = []; apiStops = [];
+  try {
+    const search = await bmtcPost('SearchRoute_v2', { routetext: busId });
+    const routes = Array.isArray(search.data) ? search.data : [];
+    const selected = routes.find(r => normalizeStop(r.routeno) === normalizeStop(busId)) || routes[0];
+    if (!selected || !selected.routeparentid) throw new Error('Route not found in BMTC API');
+    const details = await bmtcPost('SearchByRouteDetails_v4', { routeid: Number(selected.routeparentid), servicetypeid: 0 });
+    for (const direction of ['up', 'down']) {
+      const data = details?.[direction]?.data;
+      if (!Array.isArray(data) || !data.length) continue;
+      const first = data[0];
+      apiRouteVariants.push({
+        routeid: Number(first.routeid), routeno: first.routeno || selected.routeno,
+        route_direction: direction === 'up' ? 'Up' : 'Down',
+        stops: data.map(s => ({ name: s.stationname, stationid: Number(s.stationid), source: s }))
+      });
+    }
+    // Prefer a direction whose stop names overlap the sample stops; otherwise use the first returned direction.
+    const sample = ROUTES[busId].stops.map(normalizeStop);
+    apiRouteVariants.sort((a,b) => {
+      const score = v => v.stops.reduce((n,s) => n + (sample.some(x => x && (normalizeStop(s.name).includes(x) || x.includes(normalizeStop(s.name)))) ? 1 : 0), 0);
+      return score(b)-score(a);
+    });
+    apiStops = apiRouteVariants[0]?.stops || [];
+    if (!apiStops.length) throw new Error('No stops returned');
+    // Use actual BMTC stop names/IDs for the selected route whenever available.
+    const stops = apiStops.map(s => s.name).filter(Boolean);
+    ROUTES[busId].stops = stops;
+    populateStopSelects(busId);
+    updateFare();
+  } catch (err) {
+    console.warn('BMTC route/fare API unavailable:', err);
+    document.getElementById('fareAmount').textContent = 'Unavailable';
+    document.getElementById('fareDetails').textContent = 'Could not load official stop IDs. Check internet/API access; no estimated fare will be invented.';
+  }
+}
+
+async function updateFare() {
+  const token = ++fareLookupToken;
+  const board = document.getElementById('boardSelect').value;
+  const alight = document.getElementById('alightSelect').value;
+  const bi = ROUTES[currentBus].stops.indexOf(board), ai = ROUTES[currentBus].stops.indexOf(alight);
+  const from = apiStops.find(s => s.name === board);
+  const to = apiStops.find(s => s.name === alight);
+  const amountEl = document.getElementById('fareAmount'), detailsEl = document.getElementById('fareDetails');
+  if (bi < 0 || ai <= bi) {
+    amountEl.textContent = '—'; detailsEl.textContent = 'Choose a destination after the boarding stop.'; return;
+  }
+  if (!from || !to || !from.stationid || !to.stationid || !apiRouteVariants.length) {
+    amountEl.textContent = 'Unavailable'; detailsEl.textContent = 'Actual BMTC stop IDs are not loaded; no estimate shown.'; return;
+  }
+  amountEl.textContent = 'Checking…'; detailsEl.textContent = `${board} → ${alight}`;
+  try {
+    const candidates = await bmtcPost('GetFareRoutes', { fromStationId: from.stationid, toStationId: to.stationid });
+    if (token !== fareLookupToken) return;
+    const rows = Array.isArray(candidates.data) ? candidates.data : [];
+    const variant = apiRouteVariants.find(v => v.stops.some(s => s.stationid === from.stationid) && v.stops.some(s => s.stationid === to.stationid)) || apiRouteVariants[0];
+    const route = rows.find(r => Number(r.routeid) === Number(variant.routeid)) || rows.find(r => normalizeStop(r.routeno) === normalizeStop(variant.routeno)) || rows[0];
+    if (!route) throw new Error('No fare route for this stop pair');
+    const result = await bmtcPost('GetMobileFareData_v2', {
+      routeno: route.routeno || variant.routeno,
+      routeid: Number(route.routeid || variant.routeid),
+      route_direction: route.route_direction || variant.route_direction,
+      source_code: route.source_code,
+      destination_code: route.destination_code
+    });
+    if (token !== fareLookupToken) return;
+    const fares = Array.isArray(result.data) ? result.data : [];
+    if (!fares.length) throw new Error('No fares returned');
+    const unique = [];
+    for (const f of fares) {
+      const fare = Number(String(f.fare).replace(/[^0-9.]/g, ''));
+      if (Number.isFinite(fare) && fare >= 0 && !unique.some(x => x.fare === fare && x.type === f.servicetype)) unique.push({ fare, type: f.servicetype || 'BMTC service' });
+    }
+    if (!unique.length) throw new Error('Fare response had no usable amounts');
+    currentFareOptions = unique;
+    const typeSelect = document.getElementById('fareTypeSelect');
+    typeSelect.innerHTML = unique.map((f, i) => `<option value="${i}">${f.type} — ₹${f.fare}</option>`).join('');
+    const preferredIndex = unique.findIndex(f => /vajra|vayu|airport|ac/i.test(f.type) && currentBus === 'VAJRA');
+    typeSelect.value = String(preferredIndex >= 0 ? preferredIndex : 0);
+    selectFareType();
+  } catch (err) {
+    if (token !== fareLookupToken) return;
+    console.warn('Fare lookup failed:', err);
+    amountEl.textContent = 'Unavailable'; detailsEl.textContent = 'BMTC did not return a fare for this route/stop pair. No guessed fare used.';
+    currentFareOptions = [];
+    document.getElementById('fareTypeSelect').innerHTML = '<option value="">No fare options</option>';
+    document.getElementById('fareTypeSelect').innerHTML = '<option value="">No fare options</option>';
+  }
+}
+
+function selectFareType() {
+  const select = document.getElementById('fareTypeSelect');
+  const chosen = currentFareOptions[Number(select.value)];
+  if (!chosen) return;
+  document.getElementById('fareAmount').textContent = `₹${chosen.fare}`;
+  document.getElementById('fareDetails').textContent = `${chosen.type} · ${document.getElementById('boardSelect').value} → ${document.getElementById('alightSelect').value}`;
+}
+
+/* ── STOP SELECTORS ─────────────────────────────────────────────── */
+
+function populateStopSelects(busId) {
+
+  const stops  = ROUTES[busId].stops
+
+  const board  = document.getElementById('boardSelect')
+
+  const alight = document.getElementById('alightSelect')
+
+  board.innerHTML  = stops.map(s => `<option value="${s}">${s}</option>`).join('')
+
+  alight.innerHTML = stops.map(s => `<option value="${s}">${s}</option>`).join('')
+
+  board.value  = stops[0]
+
+  alight.value = stops[stops.length - 1]
+
+  const current = document.getElementById('currentStopSelect')
+
+  current.innerHTML = stops.map(s => `<option value="${s}">${s}</option>`).join('')
+
+  current.value = stops[0]
+
+  board.onchange = () => {
+
+    const bi = stops.indexOf(board.value)
+
+    if (stops.indexOf(alight.value) <= bi) {
+
+      alight.value = stops[Math.min(bi + 1, stops.length - 1)]
+
+    }
+
+  }
+  alight.onchange = updateFare;
+  board.addEventListener('change', updateFare);
+}
+
+/* ── SWITCH BUS ─────────────────────────────────────────────────── */
+
+function switchBus() {
+
+  currentBus = document.getElementById('busSelect').value
+
+  document.getElementById('capDisplay').textContent = ROUTES[currentBus].cap
+
+  populateStopSelects(currentBus)
+  loadOfficialRouteStops(currentBus)
+
+  if (busRef) { busRef.off(); busRef = null }
+
+  busRef = db.ref(`buses/${currentBus}/passengers`)
+
+  busRef.on('value', snap => renderLive(snap.val() || {}))
+
+  // Broadcast which bus this conductor is operating so passenger app can sync
+
+  db.ref('conductorActiveBus').set(currentBus)
+
+}
+
+
+
+/* ── ISSUE TICKET ───────────────────────────────────────────────── */
+
+function issueTicket() {
+
+  const board  = document.getElementById('boardSelect').value
+
+  const alight = document.getElementById('alightSelect').value
+
+  const stops  = ROUTES[currentBus].stops
+
+  const bi = stops.indexOf(board)
+
+  const ai = stops.indexOf(alight)
+
+  if (bi >= ai) {
+
+    showToast('⚠ Alighting stop must be after boarding stop')
+
+    return
+
+  }
+
+  const fareText = document.getElementById('fareAmount').textContent.trim();
+  const fareMatch = fareText.match(/^₹([0-9]+(?:\.[0-9]+)?)$/);
+  if (!fareMatch) { showToast('⚠ Fare unavailable — ticket not issued'); return; }
+  const fare = Number(fareMatch[1]);
+  const fareDetails = document.getElementById('fareDetails').textContent;
+  // Key first so the write is idempotent; stored locally until Firebase confirms.
+  const bus = currentBus
+  const key = db.ref(`buses/${bus}/passengers`).push().key
+  const data = { boardStop: board, alightStop: alight, fare, fareDetails, busType: bus, time: Date.now() }
+
+  setPending(getPending().concat({ bus, key, data }))
+
+  showToast(`🎫 Ticket ₹${fare}: ${board} → ${alight}` + (fbConnected ? '' : ' (saved, will sync)'))
+
+  db.ref(`buses/${bus}/passengers/${key}`).set(data)
+
+    .then(() => setPending(getPending().filter(x => x.key !== key)))
+
+    .catch(err => showToast('⚠ Sync failed: ' + err.message))
+
+}
+
+
+
+
+
+function recalculateOccupancy() {
+
+  if (!db) return;
+
+  const stops = ROUTES[currentBus].stops;
+
+  const at = stops.indexOf(document.getElementById('currentStopSelect').value);
+
+  db.ref(`buses/${currentBus}/passengers`).once('value').then(snap => {
+
+    const passengers = Object.values(snap.val() || {});
+
+    const occupancy = passengers.filter(p => { const b=stops.indexOf(p.boardStop), a=stops.indexOf(p.alightStop); return b !== -1 && a !== -1 && b <= at && a > at; }).length;
+
+    db.ref(`buses/${currentBus}/occupancy`).set(occupancy);
+
+  }).catch(err => showToast('⚠ Occupancy sync failed: ' + err.message));
+
+}
+
+
+
+/* ── RENDER LIVE COUNT ──────────────────────────────────────────── */
+
+function renderLive(passengers) {
+
+  const cap   = ROUTES[currentBus].cap
+
+  const list  = Object.values(passengers)
+
+  const count = list.length
+
+  const stops = ROUTES[currentBus].stops
+
+  const at = stops.indexOf(document.getElementById('currentStopSelect').value)
+
+  const onboard = list.filter(p => { const b=stops.indexOf(p.boardStop), a=stops.indexOf(p.alightStop); return b !== -1 && a !== -1 && b <= at && a > at; }).length
+
+
+
+  document.getElementById('logCountPill').textContent = count
+
+  const logEl = document.getElementById('passengerLog')
+
+  if (count === 0) {
+
+    logEl.innerHTML = '<p class="log-empty">No tickets issued yet</p>'
+
+  } else {
+
+    const sorted = [...list].sort((a, b) => b.time - a.time).slice(0, 10)
+
+    logEl.innerHTML = sorted.map(p => `
+
+      <div class="log-row">
+
+        <span class="log-stops">${p.boardStop} → ${p.alightStop}</span>
+
+        <span class="log-meta">${p.fare != null ? '₹'+p.fare+' · ' : ''}${timeAgo(p.time)}</span>
+
+      </div>`).join('')
+
+    if (count > 10) logEl.innerHTML += `<p class="log-empty" style="padding-top:8px;">+${count-10} more</p>`
+
+  }
+
+
+
+  const pct   = Math.min((onboard / cap) * 100, 100)
+
+  const numEl = document.getElementById('ticketDisplay')
+
+  const prev  = parseInt(numEl.textContent) || 0
+
+  if (count !== prev) {
+
+    numEl.classList.remove('bump')
+
+    requestAnimationFrame(() => {
+
+      numEl.classList.add('bump')
+
+      setTimeout(() => numEl.classList.remove('bump'), 200)
+
+    })
+
+  }
+
+  numEl.textContent = onboard
+
+  document.getElementById('pctText').textContent = Math.round(pct) + '% full at ' + document.getElementById('currentStopSelect').value
+
+  db.ref(`buses/${currentBus}/occupancy`).set(onboard)
+
+
+
+  const bar   = document.getElementById('crowdBar')
+
+  const badge = document.getElementById('crowdBadge')
+
+  bar.style.width = pct + '%'
+
+
+
+  // Green / Yellow / Red crowd levels
+
+  if (pct <= 40) {
+
+    bar.style.background = '#16a34a'
+
+    badge.textContent    = '🟢 Not Crowded'
+
+    badge.style.cssText  = 'background:#dcfce7;color:#15803d;display:inline-block;padding:6px 18px;border-radius:20px;font-weight:700;font-size:15px;'
+
+    numEl.style.color    = '#16a34a'
+
+  } else if (pct <= 70) {
+
+    bar.style.background = '#d97706'
+
+    badge.textContent    = '🟡 Moderate'
+
+    badge.style.cssText  = 'background:#fef3c7;color:#92400e;display:inline-block;padding:6px 18px;border-radius:20px;font-weight:700;font-size:15px;'
+
+    numEl.style.color    = '#d97706'
+
+  } else {
+
+    bar.style.background = '#dc2626'
+
+    badge.textContent    = '🔴 Very Crowded'
+
+    badge.style.cssText  = 'background:#fee2e2;color:#991b1b;display:inline-block;padding:6px 18px;border-radius:20px;font-weight:700;font-size:15px;'
+
+    numEl.style.color    = '#dc2626'
+
+  }
+
+
+
+  // Keep tickets count in sync for passenger app fallback
+
+  db.ref(`buses/${currentBus}/tickets`).set(count)
+
+}
+
+
+
+/* ── RESET TRIP ─────────────────────────────────────────────────── */
+
+function resetTrip() {
+
+  if (!confirm(`Reset all passengers for Bus ${currentBus}?\nThis clears the live crowd display.`)) return
+
+  db.ref(`buses/${currentBus}`).set({ tickets: 0, occupancy: 0, passengers: null })
+
+    .then(() => showToast('🔄 Trip reset — crowd cleared'))
+
+    .catch(err => showToast('⚠ Reset failed: ' + err.message))
+
+}
+
+
+
+/* ── HELPERS ────────────────────────────────────────────────────── */
+
+function timeAgo(ts) {
+
+  const s = Math.floor((Date.now() - ts) / 1000)
+
+  if (s < 5)    return 'just now'
+
+  if (s < 60)   return `${s}s ago`
+
+  if (s < 3600) return `${Math.floor(s/60)}m ago`
+
+  return `${Math.floor(s/3600)}h ago`
+
+}
+
+
+
+let toastTimer = null
+
+function showToast(msg) {
+
+  const t = document.getElementById('toast')
+
+  t.textContent = msg
+
+  t.classList.add('show')
+
+  clearTimeout(toastTimer)
+
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2400)
+
+}
+
+
+
+/* ── INIT ───────────────────────────────────────────────────────── */
+
+showPending()
+
+switchBus()
+
+flushPending()
+
+if ("serviceWorker" in navigator && location.protocol !== "file:") navigator.serviceWorker.register("sw.js").catch(() => {})
+
+</script>
+
+</body>
+
+</html>
