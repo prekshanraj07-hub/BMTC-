@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Namma BMTC — Commuter Companion</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+
+ integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+
+<style>
+
+:root{--blue:#0755a5;--navy:#092b50;--cyan:#e8f4ff;--bg:#f3f6fb;--text:#172437;--muted:#66758a;--line:#dce4ef;--green:#17854b;--yellow:#d18a00;--red:#d33d43}
+
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--text)}
+
+header{background:linear-gradient(120deg,#064a91,#0878c9);color:white;padding:18px max(18px,calc((100vw - 1180px)/2));display:flex;align-items:center;justify-content:space-between;gap:14px}
+
+.brand{display:flex;align-items:center;gap:12px}.logo{width:42px;height:42px;border-radius:12px;background:#fff;color:var(--blue);display:grid;place-items:center;font-weight:900;font-size:21px}
+
+header h1{font-size:20px;margin:0}header p{font-size:12px;margin:3px 0 0;color:#d9ecff}.pill{border:1px solid #ffffff55;border-radius:999px;padding:7px 11px;font-size:12px;white-space:nowrap}
+
+main{max-width:1180px;margin:22px auto;padding:0 18px}.offline{display:none;background:#fff4d6;border:1px solid #f0d58a;color:#735000;padding:10px 14px;border-radius:10px;margin-bottom:14px;font-size:13px}.offline.show{display:block}
+
+.layout{display:grid;grid-template-columns:minmax(310px,390px) 1fr;gap:18px}.panel{background:white;border:1px solid var(--line);border-radius:16px;box-shadow:0 4px 18px #1a35520a;overflow:hidden}.panel-head{padding:18px 20px;border-bottom:1px solid var(--line)}.panel-head h2{font-size:18px;margin:0}.panel-head p{margin:6px 0 0;font-size:13px;color:var(--muted)}.content{padding:18px 20px}
+
+label{display:block;font-size:12px;font-weight:700;color:#4d5e73;margin:0 0 7px}input,select{width:100%;border:1px solid #cbd6e4;border-radius:10px;padding:12px;font:inherit;background:#fff;color:var(--text);outline:none}input:focus,select:focus{border-color:#2485d3;box-shadow:0 0 0 3px #2485d31a}.field{margin-bottom:13px}.button{border:0;border-radius:10px;background:var(--blue);color:white;font-weight:700;padding:12px 15px;cursor:pointer;font:inherit}.button:hover{background:#064581}.button.secondary{background:#eaf2fb;color:#164d84}.button.small{padding:8px 10px;font-size:12px}.button.full{width:100%}
+
+.results{margin-top:16px;display:grid;gap:10px}.route-card{border:1px solid var(--line);border-radius:12px;padding:13px;cursor:pointer;transition:.15s}.route-card:hover{border-color:#75b6e8;background:#f8fcff}.route-top{display:flex;justify-content:space-between;gap:10px;align-items:center}.route-number{font-weight:800;color:#0755a5;font-size:15px}.tag{font-size:10px;font-weight:700;background:#eaf4ff;color:#1763a5;border-radius:999px;padding:5px 8px}.route-card p{margin:8px 0 0;font-size:12px;color:var(--muted);line-height:1.45}.empty{font-size:13px;color:var(--muted);padding:12px;background:#f8fafc;border-radius:10px}
+
+.recent{margin-top:22px}.recent h3{font-size:13px;margin:0 0 10px}.chips{display:flex;flex-wrap:wrap;gap:7px}.chip{border:1px solid #cddded;background:#f6fbff;color:#1a568a;border-radius:999px;padding:7px 10px;font-size:11px;cursor:pointer}
+
+.map-panel{min-height:620px;display:flex;flex-direction:column}.map-top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:15px 18px;border-bottom:1px solid var(--line)}.map-title{font-weight:800}.map-sub{font-size:12px;color:var(--muted);margin-top:4px}.map-actions{display:flex;gap:8px}.map-wrap{height:390px;position:relative}#map{height:100%;width:100%;background:#e7eef5}.map-footer{padding:16px 18px;display:grid;grid-template-columns:1fr 1fr;gap:14px}.subpanel{border:1px solid var(--line);border-radius:12px;padding:13px}.subpanel h3{font-size:13px;margin:0 0 10px}.crowd-options{display:flex;gap:6px}.crowd-btn{flex:1;border:1px solid var(--line);border-radius:9px;background:#fff;padding:9px 4px;font-size:11px;cursor:pointer}.crowd-btn.selected{border:2px solid var(--blue);background:#eef7ff;font-weight:800}.crowd-count{font-size:12px;color:var(--muted);margin-top:9px}.crowd-count strong{color:var(--text)}.history-stat{font-size:12px;line-height:1.7;color:var(--muted)}.history-stat strong{color:var(--text)}.tracker-label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}.dot{width:8px;height:8px;border-radius:50%;background:#23a45b;display:inline-block}.notice{font-size:11px;color:#718096;margin-top:9px;line-height:1.45}
+
+.hidden{display:none!important}.leaflet-popup-content{font-size:12px}.bus-emoji{font-size:25px;filter:drop-shadow(0 2px 2px #0002)}
+
+footer{max-width:1180px;margin:0 auto;padding:0 18px 24px;color:#7b8797;font-size:11px;line-height:1.5}
+
+@media(max-width:850px){.layout{grid-template-columns:1fr}.map-panel{min-height:unset}.map-wrap{height:340px}.map-footer{grid-template-columns:1fr}header{padding:16px 18px}}
+
+
+
+.fleet-panel{margin-top:18px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 4px 18px #1a35520a;overflow:hidden}
+
+.fleet-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+
+.fleet-head h2{font-size:18px;margin:0}.fleet-head p{font-size:12px;color:var(--muted);margin:5px 0 0}.fleet-status{font-size:11px;background:#fff4d6;color:#7a5200;border-radius:999px;padding:6px 10px;font-weight:800}
+
+#fleetMap{height:350px;width:100%;background:#e7eef5}.fleet-legend{padding:12px 18px;display:flex;gap:8px;flex-wrap:wrap}.fleet-chip{border:1px solid var(--line);border-radius:999px;padding:7px 11px;font-size:12px;background:#f8fbff;color:#164d84;cursor:pointer}.fleet-chip strong{margin-right:5px}.fleet-note{padding:0 18px 14px;color:var(--muted);font-size:11px;line-height:1.5}
+
+@media(max-width:760px){.fleet-head{padding:14px}.fleet-head h2{font-size:16px}#fleetMap{height:300px}header{align-items:flex-start}header .brand{min-width:0}}
+
+
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+  <div class="brand"><div class="logo">B</div><div><h1>Namma BMTC</h1><p>Plan smarter. Ride with confidence.</p></div></div>
+
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end"><button class="pill" id="fleetJump" style="background:#ffffff18;color:#fff;cursor:pointer">🗺️ Live Fleet</button><button class="pill" id="offlineBtn" style="background:#ffffff18;color:#fff;cursor:pointer">⬇ Save offline</button></div>
+
+</header>
+
+<main>
+
+  <div id="offlineBanner" class="offline">📴 You appear to be offline. Local GTFS files may still load, but map tiles require internet.</div>
+
+  <div class="layout">
+
+    <section class="panel" id="searchPanel">
+
+      <div class="panel-head"><h2>Plan your trip</h2><p>Choose stops from the BMTC GTFS dataset to find matching route patterns.</p></div>
+
+      <div class="content">
+
+        <div class="subpanel" style="margin-bottom:16px;background:#f4faff"><h3>🧠 Smart Routine <span style="font-weight:400;color:#8794a5">· learns your daily trips</span></h3>
+
+ <div id="smartList"><div class="empty">Loading…</div></div>
+
+ <div style="display:flex;gap:6px;margin-top:10px;align-items:center;flex-wrap:wrap"><input id="rtTime" type="time" style="width:110px;padding:7px"><button class="button secondary small" id="rtSave">＋ Save FROM→TO as my routine</button></div>
+
+ <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="button secondary small" id="rtSeed">▶ Demo: simulate 2 weeks</button><button class="button secondary small" id="rtClear">Clear</button></div>
+
+ <div class="notice">Learned from your searches and saved routines. Stays on this device only — nothing is uploaded.</div></div>
+
+        <div class="field"><label for="from">FROM</label><input id="from" list="stopOptions" placeholder="e.g. Majestic" autocomplete="off"></div>
+
+        <div class="field"><label for="to">TO</label><input id="to" list="stopOptions" placeholder="e.g. Indiranagar" autocomplete="off"></div>
+
+        <datalist id="stopOptions"></datalist>
+
+        <div style="display:flex;gap:6px;margin-bottom:10px"><button class="button secondary small" id="swapBtn">⇄ Swap</button><button class="button secondary small demo" data-a="HAL Main Gate" data-b="Kempegowda International Airport">✈ Demo: Airport</button><button class="button secondary small demo" data-a="ITPL" data-b="Banashankari">💼 Demo: ITPL</button></div>
+
+        <button class="button full" id="findBtn">Find Bus →</button><div id="dataStatus" class="notice" role="status">Loading GTFS data from the data folder…</div>
+
+        <div id="results" class="results"><div class="empty">Enter two stops and tap Find Bus.</div></div>
+
+        <div class="recent"><h3>Frequent routes <span style="font-weight:400;color:#8794a5">(last 3 searches)</span></h3><div id="recent" class="chips"><span class="empty">Your recent searches will appear here.</span></div></div>
+
+      </div>
+
+    </section>
+
+    <section class="panel map-panel hidden" id="mapPanel">
+
+      <div class="map-top">
+
+        <div><div class="map-title" id="selectedRouteTitle">Route map</div><div class="map-sub" id="selectedRouteSub">Stops and simulated bus location</div></div>
+
+        <div class="map-actions"><button class="button secondary small" id="resetBus">↻ Reset</button><button class="button secondary small" id="backBtn">← Back</button></div>
+
+      </div>
+
+      <div class="map-wrap"><div id="map"></div></div>
+
+      <div class="map-footer">
+
+        <div class="subpanel">
+
+          <h3>🚌 Live crowd <span style="font-weight:400;color:#8794a5">· from conductor tickets</span></h3>
+
+          <div id="crowdLive"><div class="empty">Open a route to see live crowd.</div></div>
+
+          <div class="notice">Counted from tickets issued by the conductor on this bus (passengers aboard at the bus's current stop).</div>
+
+        </div>
+
+        <div class="subpanel">
+
+          <h3>📍 Bus status</h3>
+
+          <div class="tracker-label"><span class="dot"></span><span id="busStatus">Simulated movement</span></div>
+
+          <div class="history-stat" id="busDetails">Bus location is simulated between route stops.</div>
+
+          <div class="notice">This prototype does not connect to BMTC vehicle GPS or ticketing systems.</div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </div>
+
+
+
+  <section class="fleet-panel" id="fleetPanel">
+
+    <div class="fleet-head"><div><h2>🗺️ Bengaluru Fleet Explorer</h2><p>Explore sample route corridors and shared conductor occupancy. Vehicle markers are simulated, not BMTC GPS.</p></div><span class="fleet-status" id="fleetStatus">Demo movement · GPS unavailable</span></div>
+
+    <div id="fleetMap" aria-label="Map showing sample BMTC route corridors and simulated bus markers"></div>
+
+    <div class="fleet-legend" id="fleetLegend"><button class="fleet-chip" data-fleet="500C"><strong>🚌 500C</strong><span>Loading crowd…</span></button><button class="fleet-chip" data-fleet="335E"><strong>🚌 335E</strong><span>Loading crowd…</span></button><button class="fleet-chip" data-fleet="401K"><strong>🚌 401K</strong><span>Loading crowd…</span></button><button class="fleet-chip" data-fleet="VAJRA"><strong>✈️ Vajra</strong><span>Loading crowd…</span></button><button class="fleet-chip" data-fleet="600G"><strong>🚌 600G</strong><span>Loading crowd…</span></button></div>
+
+    <div class="fleet-note">Crowd data is shared from the conductor panel when Firebase is configured and its database rules permit access. Route corridors and bus movement shown here are illustrative.</div>
+
+  </section>
+
+
+
+</main>
+
+<footer>Prototype for a reverse-engineering competition. Static route and stop patterns are loaded from the local GTFS files in data/. Bus movement is simulated; this prototype does not show live BMTC GPS or live arrival predictions. Conductor ticket counts use Firebase when available. Fleet map movement is simulated, not live vehicle GPS.</footer>
+
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+
+
+<script>
+
+"use strict";
+
+// Loads static GTFS text files from ./data/. This is scheduled route data, not live GPS.
+
+const STORAGE={history:"bmtc_demo_history_v1",crowd:"bmtc_demo_crowd_v1"};
+
+let GTFS_ROUTES=[],GTFS_STOPS=[],GTFS_READY=false;
+
+let OFFLINE_MODE=false;
+
+let activeRoute=null,map=null,routeLayer=null,busMarker=null,stopMarkers=[],timer=null,busIndex=0;
+
+const $=id=>document.getElementById(id);
+
+function loadJSON(key,fallback){try{const x=localStorage.getItem(key);return x?JSON.parse(x):fallback}catch(e){return fallback}}
+
+function saveJSON(key,value){try{localStorage.setItem(key,JSON.stringify(value))}catch(e){console.warn("Could not save",key,e)}}
+
+function routeData(){return GTFS_ROUTES}
+
+function stopLabel(stop){const name=String(stop.stop_name||"").trim(),desc=String(stop.stop_desc||"").trim();return desc&&desc!==name&&/towards?|platform/i.test(desc)?desc:name||String(stop.stop_id||"")}
+
+function allStops(){return GTFS_STOPS.map(stopLabel).filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).sort((a,b)=>a.localeCompare(b))}
+
+function initOffline(){updateOffline();window.addEventListener("online",updateOffline);window.addEventListener("offline",updateOffline)}
+
+function updateOffline(){const b=$("offlineBanner");b.classList.toggle("show",!navigator.onLine||OFFLINE_MODE);b.textContent=OFFLINE_MODE?"📴 Offline mode — showing routes saved on this device. Map tiles appear only where previously viewed.":"📴 You are offline. Search works from loaded data; live crowd and new map tiles need internet."}
+
+function setDataStatus(message,isError=false){const el=$("dataStatus");el.textContent=message;el.style.color=isError?"#b42318":"#66758a"}
+
+async function loadCSV(filename,optional=false){
+
+ try{
+
+  const response=await fetch("./data/"+filename,{cache:"no-store"});
+
+  if(!response.ok){if(optional&&response.status===404)return [];throw new Error(filename+" could not be loaded (HTTP "+response.status+"). Check that it is inside the data folder.")}
+
+  const csv=await response.text();
+
+  if(!window.Papa)throw new Error("CSV parser did not load. Check your internet connection and reload the page.");
+
+  const parsed=Papa.parse(csv,{header:true,skipEmptyLines:true,dynamicTyping:false});
+
+  if(parsed.errors&&parsed.errors.length)console.warn("CSV parsing warnings in "+filename,parsed.errors.slice(0,3));
+
+  return parsed.data.filter(row=>Object.values(row).some(v=>String(v??"").trim()!==""));
+
+ }catch(err){if(optional&&err instanceof TypeError)return [];throw err}
+
+}
+
+function dateKey(date){return date.getFullYear()+String(date.getMonth()+1).padStart(2,"0")+String(date.getDate()).padStart(2,"0")}
+
+function activeServiceIds(calendarRows,calendarDateRows){
+
+ const today=new Date(),todayKey=dateKey(today),dayKeys=["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
+
+ const active=new Set();
+
+ for(const row of calendarRows){
+
+  if(todayKey>=String(row.start_date||"")&&todayKey<=String(row.end_date||"")&&String(row[dayKeys[today.getDay()]]||"0")==="1")active.add(String(row.service_id));
+
+ }
+
+ for(const row of calendarDateRows){if(String(row.date)===todayKey){if(String(row.exception_type)==="1")active.add(String(row.service_id));if(String(row.exception_type)==="2")active.delete(String(row.service_id))}}
+
+ return active;
+
+}
+
+let FARES={};
+
+const fmt=s=>{s=((s%86400)+86400)%86400;const h=Math.floor(s/3600),m=Math.floor(s%3600/60);return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0")};
+
+const disp=s=>s[0];
+
+async function loadGTFS(){
+
+ const r=await fetch("./data/app_data.json");
+
+ if(!r.ok)throw new Error("app_data.json not found in data folder (HTTP "+r.status+"). Run build_data.py first.");
+
+ const D=await r.json();FARES=D.fares;
+
+ GTFS_ROUTES=D.patterns.map((p,k)=>({id:k,name:p.n,longName:p.l,routeId:p.r,direction:"0",headsign:"",tripCount:p.d.length,off:p.o,dep:p.d,
+
+  stops:p.s.map((id,i)=>{const s=D.stops[id]||["?","",0,0,""];const lab=(s[1]&&s[1]!==s[0]&&/towards?|platform/i.test(s[1]))?s[1]:s[0];return [lab,s[2],s[3],id,fmt(p.d[0]+p.o[i]),"",s[4]]})}));
+
+ GTFS_STOPS=Object.entries(D.stops).map(([id,s])=>({stop_id:id,stop_name:s[0],stop_desc:s[1],stop_lat:s[2],stop_lon:s[3]}));
+
+ GTFS_READY=true;return {routeCount:GTFS_ROUTES.length,stopCount:GTFS_STOPS.length};
+
+}
+
+function fareFor(r,i,j){const a=r.stops[i][6],b=r.stops[j][6];if(!a||!b)return null;const k=a+"|"+b;const v=(FARES[r.routeId]||{})[k];return v!==undefined?v:((FARES["*"]||{})[k]??null)}
+
+function nextBuses(r,i){const now=new Date(),n=now.getHours()*3600+now.getMinutes()*60;const t=r.dep.map(d=>d+r.off[i]);const up=t.filter(x=>x>=n).slice(0,3);return up.length?{today:true,list:up}:{today:false,list:t.slice(0,1)}}
+
+
+
+
+
+/* ── Offline mode: frequent routes saved in localStorage (full GTFS is \~9 MB, too big for localStorage) ── */
+
+const OFF_KEY="bmtc_offline_routes_v2",OFF_MAX_PAIRS=12;
+
+const offGet=()=>loadJSON(OFF_KEY,{routes:{},pairs:{}});
+
+function offWrite(st){for(let k=0;k<6;k++){try{localStorage.setItem(OFF_KEY,JSON.stringify(st));return true}catch(e){const keys=Object.keys(st.pairs).sort((a,b)=>st.pairs[a].at-st.pairs[b].at);if(!keys.length)return false;delete st.pairs[keys[0]];offGc(st)}}return false}
+
+function offGc(st){const used=new Set();Object.values(st.pairs).forEach(p=>p.ids.forEach(i=>used.add(i)));Object.keys(st.routes).forEach(k=>{if(!used.has(k))delete st.routes[k]})}
+
+function offSavePair(from,to,matches){
+
+ if(!GTFS_READY||OFFLINE_MODE||!matches||!matches.length)return false;
+
+ const st=offGet(),ids=[];
+
+ matches.slice(0,5).forEach(m=>{const o=GTFS_ROUTES[m.id];if(!o)return;
+
+  const rk=o.routeId+"|"+o.stops[0][3]+"|"+o.stops[o.stops.length-1][3]+"|"+o.stops.length;
+
+  const i=findStopIndex(o.stops,from),j=findStopIndex(o.stops,to),prev=st.routes[rk]||{fare:{}};
+
+  if(i>=0&&j>i){const a=o.stops[i][6],b=o.stops[j][6],f=fareFor(o,i,j);if(a&&b&&f!=null)prev.fare[a+"|"+b]=f}
+
+  st.routes[rk]={name:o.name,longName:o.longName,routeId:o.routeId,tripCount:o.tripCount,off:o.off,dep:o.dep,stops:o.stops,fare:prev.fare};ids.push(rk)});
+
+ if(!ids.length)return false;
+
+ st.pairs[(from+"|"+to).toLowerCase()]={from,to,ids,at:Date.now()};
+
+ const keys=Object.keys(st.pairs).sort((a,b)=>st.pairs[a].at-st.pairs[b].at);
+
+ while(keys.length>OFF_MAX_PAIRS)delete st.pairs[keys.shift()];
+
+ offGc(st);return offWrite(st)}
+
+function offRestore(){
+
+ const st=offGet(),keys=Object.keys(st.routes);if(!keys.length)return null;
+
+ FARES={};
+
+ GTFS_ROUTES=keys.map((k,i)=>{const r=st.routes[k];FARES[r.routeId]=Object.assign(FARES[r.routeId]||{},r.fare);return {id:i,name:r.name,longName:r.longName,routeId:r.routeId,direction:"0",headsign:"",tripCount:r.tripCount,off:r.off,dep:r.dep,stops:r.stops}});
+
+ const seen={};GTFS_STOPS=[];GTFS_ROUTES.forEach(r=>r.stops.forEach(s=>{if(!seen[s[3]]){seen[s[3]]=1;GTFS_STOPS.push({stop_id:s[3],stop_name:s[0],stop_desc:"",stop_lat:s[1],stop_lon:s[2]})}}));
+
+ GTFS_READY=true;OFFLINE_MODE=true;return {routeCount:GTFS_ROUTES.length,pairCount:Object.keys(st.pairs).length,stopCount:GTFS_STOPS.length}}
+
+function offSaveFrequent(){
+
+ if(OFFLINE_MODE){setDataStatus("Already in offline mode using saved routes.");return}
+
+ if(!GTFS_READY){setDataStatus("Route data is still loading — try again in a moment.",true);return}
+
+ const pairs=[...loadJSON(STORAGE.history,[]).map(h=>[h.from,h.to]),...suggestions().map(x=>[x.from,x.to])];
+
+ const f=$("from").value.trim(),t=$("to").value.trim();if(f&&t)pairs.push([f,t]);
+
+ const uniq=[...new Map(pairs.map(p=>[(p[0]+"|"+p[1]).toLowerCase(),p])).values()];
+
+ let saved=0;uniq.forEach(([a,b])=>{if(offSavePair(a,b,findRoutes(a,b)))saved++});
+
+ const st=offGet();
+
+ setDataStatus(saved?`✓ Saved ${saved} frequent route search${saved===1?"":"es"} (${Object.keys(st.routes).length} routes) for offline use.`:"Nothing to save yet — search a route first, then tap Save offline.",!saved)}
+
+
+
+const RKEY="bmtc_routine_v1",isWk=d=>d>0&&d<6,avg=a=>a.reduce((x,y)=>x+y,0)/a.length;
+
+const rtGet=()=>loadJSON(RKEY,[]),hm=m=>fmt(Math.round(m)*60);
+
+function logTrip(from,to,min,w=1,force=false){const d=new Date(),day=dateKey(d),list=rtGet();
+
+ if(!force&&list.some(e=>e.day===day&&e.from===from&&e.to===to))return;
+
+ list.push({from,to,dow:d.getDay(),day,w,min:min??d.getHours()*60+d.getMinutes()});saveJSON(RKEY,list.slice(-300))}
+
+function suggestions(){const now=new Date(),nm=now.getHours()*60+now.getMinutes(),g=new Map();
+
+ for(const e of rtGet()){const df=Math.abs(e.min-nm),diff=Math.min(df,1440-df);if(diff>60||isWk(e.dow)!==isWk(now.getDay()))continue;
+
+  const k=e.from+"|"+e.to,o=g.get(k)||{from:e.from,to:e.to,n:0,mins:[]};o.n+=e.w||1;o.mins.push(e.min);g.set(k,o)}
+
+ return [...g.values()].sort((a,b)=>b.n-a.n).slice(0,3)}
+
+function renderSmart(){const root=$("smartList");if(!root)return;const s=suggestions();
+
+ if(!s.length){root.innerHTML='<div class="empty">No habit yet for this time of day. Search or save trips you take regularly and I will start suggesting them. Or tap the demo button.</div>';return}
+
+ root.innerHTML="";s.forEach(x=>{const r=GTFS_READY?findRoutes(x.from,x.to)[0]:null,habit=x.n>=3;
+
+  const nb=r?(r.next.today?"Next buses: "+r.next.list.map(fmt).join(" · "):"No more buses today"):"";
+
+  const c=document.createElement("div");c.className="route-card";
+
+  c.innerHTML=`<div class="route-top"><span class="route-number">${escapeHTML(x.from)} → ${escapeHTML(x.to)}</span><span class="tag">${habit?"HABIT · "+x.n+"×":"LEARNING"}</span></div><p>You usually travel this around <b>${hm(avg(x.mins))}</b>.${r?"<br>🚌 "+escapeHTML(r.name)+" · \~"+r.mins+" min"+(r.fare!=null?" · ₹"+r.fare:"")+"<br>🕒 "+nb:""}</p>`;
+
+  c.addEventListener("click",()=>{$("from").value=x.from;$("to").value=x.to;onFind()});root.appendChild(c)})}
+
+function seedDemo(){const now=new Date(),nm=now.getHours()*60+now.getMinutes(),list=[];
+
+ for(let i=1;i<=10;i++)list.push({from:"Banashankari",to:"ITPL",dow:now.getDay(),day:"demo"+i,w:1,min:nm+((i*7)%21)-10});
+
+ saveJSON(RKEY,list);renderSmart()}
+
+function populateStops(){const list=$("stopOptions");list.innerHTML="";[...new Set(GTFS_STOPS.map(s=>s.stop_name.trim()))].sort((x,y)=>x.localeCompare(y)).forEach(name=>{const o=document.createElement("option");o.value=name;list.appendChild(o)})}
+
+const baseName=s=>String(s).toLocaleLowerCase().replace(/\s*\(?towards?[^)]*\)?/g,"").replace(/\s*-?\s*platform\s*\w*/g,"").trim();
+
+const ALIAS={majestic:"kempegowda bus station",kbs:"kempegowda bus station",airport:"kempegowda international airport",kia:"kempegowda international airport"};
+
+function findStopIndex(stops,query){let q=baseName(query);q=ALIAS[q]||q;if(!q)return -1;let i=stops.findIndex(s=>baseName(s[0])===q);if(i>=0)return i;return stops.findIndex(s=>baseName(s[0]).includes(q))}
+
+function findRoutes(from,to){const a=from.trim().toLocaleLowerCase(),b=to.trim().toLocaleLowerCase();if(!a||!b)return [];
+
+ const found=[];for(const r of routeData()){const i=findStopIndex(r.stops,a),j=findStopIndex(r.stops,b);if(i>=0&&j>i){found.push({...r,fullStopCount:r.stops.length,fare:fareFor(r,i,j),mins:Math.round((r.off[j]-r.off[i])/60),next:nextBuses(r,i),stops:r.stops.slice(i,j+1)})}}
+
+ return found.sort((x,y)=>(x.mins-y.mins)||y.tripCount-x.tripCount).slice(0,40)
+
+}
+
+function renderResults(routes){const root=$("results");root.innerHTML="";if(!routes.length){root.innerHTML='<div class="empty">No direct route pattern found for those stops in the loaded GTFS data. Check the spelling, tap ⇄ Swap, or try a demo button above.</div>';return}
+
+ routes.forEach(r=>{const card=document.createElement("div");card.className="route-card";card.tabIndex=0;const nb=r.next.today?"Next: "+r.next.list.map(fmt).join(" · "):"No more buses today · first tomorrow "+fmt(r.next.list[0]);
+
+card.innerHTML=`<div class="route-top"><span class="route-number">${escapeHTML(r.name)}</span><span class="tag">${r.fare!=null?"₹"+r.fare:"Fare n/a"}</span></div><p>${escapeHTML(disp(r.stops[0]))} → ${escapeHTML(disp(r.stops[r.stops.length-1]))}<br>⏱ \~${r.mins} min · ${r.stops.length} stops · ${r.tripCount} trips/day<br>🕒 ${nb}</p>`;card.addEventListener("click",()=>openRoute(r));card.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openRoute(r)}});root.appendChild(card)})}
+
+function escapeHTML(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+function saveSearch(from,to){let h=loadJSON(STORAGE.history,[]);h=[{from,to,at:Date.now()},...h.filter(x=>x.from.toLowerCase()!==from.toLowerCase()||x.to.toLowerCase()!==to.toLowerCase())].slice(0,3);saveJSON(STORAGE.history,h);renderHistory()}
+
+function renderHistory(){const root=$("recent"),h=loadJSON(STORAGE.history,[]);root.innerHTML="";if(!h.length){root.innerHTML='<span class="empty">Your recent searches will appear here.</span>';return}h.forEach(x=>{const b=document.createElement("button");b.className="chip";b.textContent=x.from+" → "+x.to;b.title="Search this route again";b.addEventListener("click",()=>{$("from").value=x.from;$("to").value=x.to;const r=findRoutes(x.from,x.to);renderResults(r);if(r.length)saveSearch(x.from,x.to)});root.appendChild(b)})}
+
+function onFind(){const from=$("from").value.trim(),to=$("to").value.trim();if(!from||!to){$("results").innerHTML='<div class="empty">Please enter both a starting stop and destination.</div>';return}if(!GTFS_READY){$("results").innerHTML='<div class="empty">GTFS data is still loading. Please wait a moment and try again.</div>';return}const matches=findRoutes(from,to);renderResults(matches);if(matches.length){saveSearch(from,to);logTrip(from,to);renderSmart();offSavePair(from,to,matches)}}
+
+function openRoute(route){activeRoute=route;busIndex=0;$("searchPanel").classList.add("hidden");$("mapPanel").classList.remove("hidden");$("selectedRouteTitle").textContent="Route "+route.name;$("selectedRouteSub").textContent=route.stops[0][0]+" → "+route.stops.at(-1)[0]+" · Fare "+(route.fare!=null?"₹"+route.fare:"n/a")+" · \~"+route.mins+" min · bus movement simulated";initMap();drawRoute();startBus();watchCrowd();setTimeout(()=>map.invalidateSize(),100)}
+
+function initMap(){if(map)return;map=L.map("map").setView([12.9716,77.5946],11);L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(map)}
+
+function drawRoute(){if(!map||!activeRoute)return;if(routeLayer)map.removeLayer(routeLayer);stopMarkers.forEach(m=>map.removeLayer(m));stopMarkers=[];const pts=activeRoute.stops.map(s=>[s[1],s[2]]);routeLayer=L.polyline(pts,{color:"#0878c9",weight:5,opacity:.8}).addTo(map);
+
+ activeRoute.stops.forEach((s,i)=>{const marker=L.circleMarker([s[1],s[2]],{radius:6,color:"#0755a5",fillColor:"#fff",fillOpacity:1,weight:3}).addTo(map);const scheduled=s[4]?"<br>Scheduled arrival: "+escapeHTML(s[4]):"";marker.bindPopup(`<b>${escapeHTML(s[0])}</b><br>Stop ${i+1} of ${activeRoute.stops.length}${scheduled}<br>GTFS stop ID: ${escapeHTML(s[3]||"")}`);stopMarkers.push(marker)});map.fitBounds(routeLayer.getBounds(),{padding:[35,35]});const icon=L.divIcon({className:"",html:'<div class="bus-emoji">🚌</div>',iconSize:[30,30],iconAnchor:[15,15]});if(busMarker)map.removeLayer(busMarker);busMarker=L.marker(pts[0],{icon,zIndexOffset:1000}).addTo(map)}
+
+function startBus(){clearInterval(timer);busIndex=0;moveBus();timer=setInterval(()=>{if(!activeRoute)return;busIndex=(busIndex+1)%activeRoute.stops.length;moveBus()},4000)}
+
+function moveBus(){if(!activeRoute||!busMarker)return;const s=activeRoute.stops[busIndex];busMarker.setLatLng([s[1],s[2]]);$("busStatus").textContent="Simulated · at "+disp(s);$("busDetails").innerHTML=`<strong>${escapeHTML(disp(s))}</strong><br>Stop ${busIndex+1} of ${activeRoute.stops.length}<br>Next: ${escapeHTML(activeRoute.stops[(busIndex+1)%activeRoute.stops.length][0])}${s[4]?"<br>Scheduled arrival: "+escapeHTML(s[4]):""}`}
+
+function resetBus(){busIndex=0;moveBus();if(map&&activeRoute)map.panTo([activeRoute.stops[0][1],activeRoute.stops[0][2]])}
+
+function backToSearch(){unwatchCrowd();clearInterval(timer);timer=null;$("mapPanel").classList.add("hidden");$("searchPanel").classList.remove("hidden");activeRoute=null}
+
+$("findBtn").addEventListener("click",onFind);$("from").addEventListener("keydown",e=>{if(e.key==="Enter")onFind()});$("to").addEventListener("keydown",e=>{if(e.key==="Enter")onFind()});$("swapBtn").addEventListener("click",()=>{const t=$("from").value;$("from").value=$("to").value;$("to").value=t;onFind()});document.querySelectorAll(".demo").forEach(b=>b.addEventListener("click",()=>{$("from").value=b.dataset.a;$("to").value=b.dataset.b;onFind()}));$("backBtn").addEventListener("click",backToSearch);$("resetBus").addEventListener("click",resetBus);
+
+$("offlineBtn").addEventListener("click",offSaveFrequent);
+
+$("rtSave").addEventListener("click",()=>{const f=$("from").value.trim(),t=$("to").value.trim(),v=$("rtTime").value;if(!f||!t||!v){alert("Fill FROM, TO and a time first.");return}const[a,b]=v.split(":").map(Number);logTrip(f,t,a*60+b,3,true);renderSmart()});
+
+$("rtSeed").addEventListener("click",seedDemo);$("rtClear").addEventListener("click",()=>{saveJSON(RKEY,[]);renderSmart()});
+
+{const d=new Date();$("rtTime").value=String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")}
+
+setInterval(renderSmart,60000);
+
+async function startApp(){if("serviceWorker" in navigator&&location.protocol!=="file:")navigator.serviceWorker.register("sw.js").catch(e=>console.warn("SW not registered",e));initOffline();renderHistory();try{setDataStatus("Loading routes, stops and trip patterns from ./data/…");const stats=await loadGTFS();populateStops();renderSmart();setDataStatus(`Loaded ${stats.routeCount.toLocaleString()} route patterns and ${stats.stopCount.toLocaleString()} stops from GTFS. Static schedules only; bus movement is simulated.`)}catch(err){console.error(err);const st=offRestore();if(st){populateStops();renderSmart();updateOffline();setDataStatus(`📴 Offline mode: ${st.routeCount} saved routes across ${st.pairCount} frequent searches. Search the stops you saved earlier.`);return}setDataStatus("Could not load GTFS: "+err.message,true);$("results").innerHTML='<div class="empty">Route data could not be loaded. Confirm data/app_data.json exists, then open the project through http://localhost:8000 or VS Code Live Server (not by double-clicking index.html) and refresh.</div>'}}
+
+renderSmart();startApp();
+
+
+
+
+
+/* ── Live crowd: driven by conductor ticket counter (Firebase buses/<id>) ── */
+
+let crowdRef=null;
+
+function conductorId(route){const first=String(route.name||"").trim().toUpperCase().split(/\s+/)[0];const n=first.replace(/[^A-Z0-9]/g,"");if(FLEET_ROUTES[n])return n;if(/^KIA-?\d/.test(first))return "VAJRA";return null}
+
+function unwatchCrowd(){if(crowdRef){crowdRef.off();crowdRef=null}}
+
+function crowdLevel(p){return p<=40?{t:"🟢 Not crowded",c:"#17854b",bg:"#e3f6ec"}:p<=70?{t:"🟡 Moderate",c:"#9a6a00",bg:"#fff4d6"}:{t:"🔴 Very crowded",c:"#b42318",bg:"#fde8e8"}}
+
+function renderCrowdLive(id,d){const cap=FLEET_ROUTES[id].cap,ps=Object.values(d.passengers||{}),n=Number.isFinite(d.occupancy)?d.occupancy:(ps.length||Number(d.tickets)||0),pct=Math.min(100,n/cap*100),L=crowdLevel(pct);
+
+ $("crowdLive").innerHTML=`<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:34px;font-weight:800;color:${L.c}">${n}</span><span style="color:var(--muted);font-size:12px">of ${cap} seats · bus ${escapeHTML(id)}</span></div><div style="background:#eef2f7;border-radius:8px;height:10px;margin:8px 0;overflow:hidden"><div style="height:10px;width:${pct}%;background:${L.c};transition:width .4s"></div></div><span style="display:inline-block;padding:5px 12px;border-radius:999px;font-weight:700;font-size:12px;background:${L.bg};color:${L.c}">${L.t}</span> <span style="font-size:11px;color:var(--muted)">${Math.round(pct)}% full · ${ps.length||Number(d.tickets)||0} tickets this trip</span>`}
+
+function watchCrowd(){unwatchCrowd();const el=$("crowdLive"),id=activeRoute&&conductorId(activeRoute);
+
+ if(!id){el.innerHTML='<div class="empty">No conductor is reporting for this route. Live crowd shows on routes with a BMTC+ conductor (500-C, 335-E, 401-K, 600-G, KIA/Vajra).</div>';return}
+
+ if(!sharedDb||!navigator.onLine){el.innerHTML='<div class="empty">📴 Live crowd needs internet. It will appear when you are back online.</div>';return}
+
+ el.innerHTML='<div class="empty">Connecting to conductor…</div>';
+
+ crowdRef=sharedDb.ref("buses/"+id);crowdRef.on("value",snap=>renderCrowdLive(id,snap.val()||{}),err=>{el.innerHTML='<div class="empty">Live crowd unavailable: '+escapeHTML(err.message)+'</div>'})}
+
+window.addEventListener("online",()=>{if(activeRoute)watchCrowd()});window.addEventListener("offline",()=>{if(activeRoute)watchCrowd()});
+
+
+
+/* Shared conductor integration + fleet map. Firebase credentials identify the project;
+
+   secure database rules/authentication must be configured in Firebase Console. */
+
+const BMTC_FIREBASE_CONFIG={apiKey:"AIzaSyBJhjQuVezbRJoFVLgvTmaDVDYmdg3Aock",authDomain:"bmtc-plus.firebaseapp.com",databaseURL:"https://bmtc-plus-default-rtdb.firebaseio.com",projectId:"bmtc-plus",storageBucket:"bmtc-plus.firebasestorage.app",messagingSenderId:"1004223209739",appId:"1:1004223209739:web:7578d2ccbadfc12413020e"};
+
+let sharedDb=null, fleetMap=null, fleetRefs=[], fleetMarkers={};
+
+const FLEET_ROUTES={
+
+ "500C":{cap:65,stops:[[13.0036,77.6946,"KR Puram Bus Stand"],[12.9913,77.6830,"Tin Factory"],[12.9591,77.6972,"Marathahalli Bridge"],[12.9345,77.6760,"Bellandur Signal"],[12.9240,77.6580,"Agara Junction"],[12.9116,77.6474,"HSR Layout BDA Complex"],[12.9070,77.6365,"Bommanahalli"],[12.8661,77.6761,"Electronic City Flyover"],[12.8440,77.6650,"Hebbagodi"],[12.9175,77.6236,"Central Silk Board"]]},
+
+ "335E":{cap:65,stops:[[12.9774,77.5723,"Kempegowda Bus Station"],[12.9766,77.5986,"Mayo Hall"],[12.9611,77.6387,"Domlur"],[12.9600,77.6540,"HAL Old Airport Road"],[12.9591,77.6972,"Marathahalli Bridge"],[12.9711,77.7279,"ITPL Main Gate"],[12.9698,77.7500,"Whitefield Bus Stop"],[12.9916,77.7100,"Hoodi Junction"],[12.9985,77.7597,"Kadugodi Bus Station"]]},
+
+ "401K":{cap:65,stops:[[13.1007,77.5963,"Yelahanka Old Town"],[13.0600,77.5700,"Vidyaranyapura"],[13.0320,77.5680,"BEL Circle"],[13.0184,77.5547,"Mathikere"],[13.0211,77.5414,"Yeshwanthpur Junction"],[12.9958,77.5388,"Rajajinagar 4th Block"],[12.9742,77.5230,"Vijayanagar Bus Stand"],[12.9188,77.4887,"Kengeri Satellite Town"],[12.9099,77.4848,"Kengeri TTMC"]]},
+
+ "VAJRA":{cap:45,stops:[[13.1986,77.7066,"Kempegowda Intl Airport"],[13.1003,77.5965,"Yelahanka New Town"],[13.0354,77.5970,"Hebbal Flyover"],[13.0047,77.5800,"Mekhri Circle"],[12.9756,77.6072,"MG Road (Trinity Circle)"],[12.9774,77.5723,"Kempegowda Bus Station"]]},
+
+ "600G":{cap:65,stops:[[12.9774,77.5723,"Kempegowda Bus Station"],[12.9308,77.5839,"Jayanagar 4th T Block"],[12.9063,77.5857,"JP Nagar 2nd Phase"],[12.8900,77.5973,"Bannerghatta Road"],[12.8642,77.5978,"Arekere Gate"],[12.8479,77.5975,"Gottigere"]]}
+
+};
+
+function initSharedFirebase(){try{if(!window.firebase)return;if(!firebase.apps.length)firebase.initializeApp(BMTC_FIREBASE_CONFIG);sharedDb=firebase.database();sharedDb.ref('.info/connected').on('value',s=>{const el=$('fleetStatus');if(el)el.textContent=s.val()?'Firebase connected · marker movement simulated':'Demo movement · Firebase offline';});Object.keys(FLEET_ROUTES).forEach(id=>{const ref=sharedDb.ref('buses/'+id);ref.on('value',snap=>renderFleetCrowd(id,snap.val()||{}));fleetRefs.push(ref)});}catch(e){console.warn('Shared Firebase unavailable:',e.message);const el=$('fleetStatus');if(el)el.textContent='Demo mode · Firebase unavailable';}}
+
+function renderFleetCrowd(id,data){const route=FLEET_ROUTES[id],ps=Object.values(data.passengers||{});const count=Number.isFinite(data.occupancy)?data.occupancy:(ps.length||Number(data.tickets)||0);const pct=Math.min(100,count/route.cap*100);const chip=document.querySelector('[data-fleet="'+id+'"]');if(chip)chip.innerHTML='<strong>'+ (id==='VAJRA'?'✈️ ':'🚌 ')+id+'</strong><span>'+count+'/'+route.cap+' · '+(pct<=40?'Not crowded':pct<=70?'Moderate':'Crowded')+'</span>';const marker=fleetMarkers[id];if(marker)marker.setPopupContent('<b>'+id+'</b><br>Estimated crowd: '+count+'/'+route.cap+'<br><small>Vehicle location is simulated.</small>');}
+
+function initFleetMap(){if(!window.L||fleetMap)return;const el=$('fleetMap');if(!el)return;fleetMap=L.map(el).setView([12.9716,77.5946],10);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(fleetMap);Object.entries(FLEET_ROUTES).forEach(([id,r],ri)=>{const pts=r.stops.map(s=>[s[0],s[1]]);L.polyline(pts,{color:['#0755a5','#17854b','#d18a00','#7c3aed','#d33d43'][ri],weight:3,opacity:.65,dashArray:'5,6'}).addTo(fleetMap);const idx=Math.min(ri+1,r.stops.length-1);const marker=L.marker(pts[idx]).addTo(fleetMap);marker.bindPopup('<b>'+id+'</b><br>'+r.stops[idx][2]+'<br><small>Simulated marker — not GPS</small>');fleetMarkers[id]=marker;let leg=idx,step=1;setInterval(()=>{leg+=step;if(leg>=r.stops.length-1){leg=r.stops.length-1;step=-1}else if(leg<=0){leg=0;step=1}marker.setLatLng(pts[leg]);},5000+ri*700);});document.querySelectorAll('[data-fleet]').forEach(b=>b.addEventListener('click',()=>{const id=b.dataset.fleet,route=FLEET_ROUTES[id];fleetMap.fitBounds(L.latLngBounds(route.stops.map(s=>[s[0],s[1]])).pad(.15));fleetMarkers[id].openPopup();}));setTimeout(()=>fleetMap.invalidateSize(),250);}
+
+$('fleetJump')?.addEventListener('click',()=>{ $('fleetPanel').scrollIntoView({behavior:'smooth',block:'start'});initFleetMap();setTimeout(()=>fleetMap&&fleetMap.invalidateSize(),250);});
+
+initSharedFirebase();initFleetMap();
+
+
+
+</script>
+
+</body>
+
+</html>
